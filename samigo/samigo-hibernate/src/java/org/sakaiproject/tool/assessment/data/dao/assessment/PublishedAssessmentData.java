@@ -93,6 +93,42 @@ public class PublishedAssessmentData
 
   
   public PublishedAssessmentData() {}
+  
+  /**
+   * ThachLN added to support get description.
+   * @param id
+   * @param title
+   * @param desc
+   * @param releaseTo
+   * @param startDate
+   * @param dueDate
+   * @param retractDate
+   * @param feedbackDate
+   * @param feedbackDelivery
+   * @param feedbackComponentOption
+   * @param feedbackAuthoring
+   * @param lateHandling
+   * @param unlimitedSubmissions
+   * @param submissionsAllowed
+   * @param scoringType
+   * @param status
+   * @param lastModifiedDate
+   * @param timeLimit
+   */
+  public PublishedAssessmentData(Long id, String title, String desc, String releaseTo, Date startDate, Date dueDate,
+          Date retractDate, Date feedbackDate, Integer feedbackDelivery, Integer feedbackComponentOption,
+          Integer feedbackAuthoring, Integer lateHandling, Boolean unlimitedSubmissions, Integer submissionsAllowed,
+          Integer scoringType, Integer status, Date lastModifiedDate, Integer timeLimit) {
+	  // final Date feedbackEndDate = null;
+	  // final Double feedbackScoreThreshold = null;
+	  this(id, title, releaseTo, startDate, dueDate, retractDate,
+              feedbackDate, feedbackDelivery,  feedbackComponentOption,
+              feedbackAuthoring, lateHandling, unlimitedSubmissions, submissionsAllowed,
+              scoringType, status, lastModifiedDate, timeLimit, null, null);
+
+      this.description = desc;
+  }
+  
   /**
    * "Convenient Constructor"
    * This is a cheap object created for holding just the Id, title. This object is merely used for validation of assessmentTitleIsUniqueForAll. It is not used

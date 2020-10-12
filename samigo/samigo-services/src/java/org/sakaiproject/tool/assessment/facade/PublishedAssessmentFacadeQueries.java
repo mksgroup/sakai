@@ -1393,6 +1393,117 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
 		return pubList;
 	}
 
+	// For module TOEIC
+    /**
+     * Get assessments with description contain "Type: Practice" or "Type: Exam" if not null.
+     * Copy codes from above method. Add filter to select TOEIC assessment which Metadata KEYWORDS contain text "TOEIC".
+     * @param orderBy
+     * @param ascending
+     * @param siteId
+     * @param isToeic
+     * @return
+     * @see org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacadeQueriesAPI#getBasicInfoOfAllPublishedAssessments(java.lang.String, boolean, java.lang.String, java.lang.Boolean)
+     */
+	public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments(String orderBy, boolean ascending, final String siteId, Boolean isToeic) {
+
+		final List<String> groupIds = getSiteGroupIdsForCurrentUser(siteId);
+		String query = "";
+		if (groupIds.size() > 0) {
+			query = "select distinct new PublishedAssessmentData(p.publishedAssessmentId, p.title, "
+				+ " c.releaseTo, c.startDate, c.dueDate, c.retractDate, "
+				+ " c.feedbackDate, f.feedbackDelivery, f.feedbackComponentOption, f.feedbackAuthoring, c.lateHandling, "
+				+ " c.unlimitedSubmissions, c.submissionsAllowed, em.scoringType, p.status, p.lastModifiedDate, c.timeLimit, c.feedbackEndDate, c.feedbackScoreThreshold) "
+				+ " from PublishedAssessmentData as p, PublishedAccessControl as c,"
+				+ " PublishedFeedback as f, AuthorizationData as az, PublishedEvaluationModel as em"
+				+ " where c.assessment.publishedAssessmentId=p.publishedAssessmentId "
+				+ " and p.publishedAssessmentId = f.assessment.publishedAssessmentId "
+				+ " and p.publishedAssessmentId = em.assessment.publishedAssessmentId "
+				+ " and (p.status=:activeStatus or p.status=:editStatus) and (az.agentIdString=:siteId or az.agentIdString in (:groupIds)) "
+				+ " and az.functionId=:functionId and az.qualifierId=p.publishedAssessmentId"
+				// For TOEIC
+				+ " and ((p.description IS NULL) or (p.description IS EMPTY) or (p.description = '') or (p.description like '%Type: Practice%') or (p.description like '%Type: Exam%') or (p.description like '%Type: SEV%'))"
+				+ " order by ";
+		}
+		else {
+			query = "select new PublishedAssessmentData(p.publishedAssessmentId, p.title, "
+				+ " c.releaseTo, c.startDate, c.dueDate, c.retractDate, "
+				+ " c.feedbackDate, f.feedbackDelivery, f.feedbackComponentOption, f.feedbackAuthoring, c.lateHandling, "
+				+ " c.unlimitedSubmissions, c.submissionsAllowed, em.scoringType, p.status, p.lastModifiedDate, c.timeLimit, c.feedbackEndDate, c.feedbackScoreThreshold) "
+				+ " from PublishedAssessmentData as p, PublishedAccessControl as c,"
+				+ " PublishedFeedback as f, AuthorizationData as az, PublishedEvaluationModel as em"
+				+ " where c.assessment.publishedAssessmentId=p.publishedAssessmentId "
+				+ " and p.publishedAssessmentId = f.assessment.publishedAssessmentId "
+				+ " and p.publishedAssessmentId = em.assessment.publishedAssessmentId "
+				+ " and (p.status=:activeStatus or p.status=:editStatus) and az.agentIdString=:siteId "
+				+ " and az.functionId=:functionId and az.qualifierId=p.publishedAssessmentId"
+				// For TOEIC
+				+ " and ((p.description IS NULL) or (p.description IS EMPTY) or (p.description = '') or (p.description like '%Type: Practice%') or (p.description like '%Type: Exam%') or (p.description like '%Type: SEV%'))"
+				+ " order by ";
+		}
+		if (ascending == false) {
+
+			if (orderBy.equals(DUE)) {
+				query += " c." + orderBy + " desc";
+			} else {
+				query += " p." + orderBy + " desc";
+			}
+		} else {
+			if (orderBy.equals(DUE)) {
+				query += " c." + orderBy + " asc";
+			} else {
+				query += " p." + orderBy + " asc";
+			}
+		}
+
+		final String hql = query;
+		final HibernateCallback<List<PublishedAssessmentData>> hcb = session -> {
+            Query q = session.createQuery(hql);
+            q.setInteger("activeStatus", 1);
+            q.setInteger("editStatus", 3);
+            q.setString("siteId", siteId);
+            if (groupIds.size() > 0) {
+                q.setParameterList("groupIds", groupIds);
+            }
+            q.setString("functionId", "TAKE_PUBLISHED_ASSESSMENT");
+            return q.list();
+        };
+		List<PublishedAssessmentData> list = getHibernateTemplate().execute(hcb);
+		List<PublishedAssessmentFacade> pubList = new ArrayList<>();
+		// For TOEIC
+		String keywords;
+        Set assessmentMetaDataSet;
+        // For TOEIC.End
+		for (PublishedAssessmentData p : list) {
+			PublishedAssessmentFacade f = new PublishedAssessmentFacade(p.getPublishedAssessmentId(), p.getTitle(),
+					p.getReleaseTo(), p.getStartDate(), p.getDueDate(), p
+							.getRetractDate(), p.getFeedbackDate(), p
+							.getFeedbackDelivery(), p.getFeedbackComponentOption(), p.getFeedbackAuthoring(), p
+							.getLateHandling(), p.getUnlimitedSubmissions(), p
+							.getSubmissionsAllowed(), p.getScoringType(), p.getStatus(), p.getLastModifiedDate(), p.getTimeLimit(), p.getFeedbackEndDate(), p.getFeedbackScoreThreshold());
+			// For TOEIC
+			keywords = p.getAssessmentMetaDataByLabel(AssessmentMetaData.KEYWORDS);
+            assessmentMetaDataSet = p.getAssessmentMetaDataSet();
+            
+            if (assessmentMetaDataSet != null) {
+                f.setAssessmentMetaDataSet(preparePublishedMetaDataSet(p, assessmentMetaDataSet));
+            }
+
+            log.info("Metadata of Keywords=" + keywords);
+            if ((isToeic != null) && isToeic) {
+                if ((keywords != null) && (keywords.contains("TOEIC"))) {
+                    pubList.add(f);
+                } else {
+                    // Skip the normal assessments
+                }
+            } else {
+                pubList.add(f);
+            }
+			// For TOEIC.End
+			pubList.add(f);
+		}
+		return pubList;
+	}
+
 	// This is for instructors view (author index page)
 	public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments2(String sortString, boolean ascending, final String siteAgentId) {
 		String orderBy = getOrderBy(sortString);
@@ -2808,5 +2919,58 @@ public class PublishedAssessmentFacadeQueries extends HibernateDaoSupport implem
     					.retryDeadlock(e, retryCount);
     		}
     	}
+    }
+
+ // For module TOEIC
+    @Override
+    public String getPublishedAssessmentTitle (Long assessmentGradingId) {
+        String result = null;
+        final HibernateCallback<List<String>> hcb = session -> {
+            Query q = session.createQuery(
+                    "select p.title from PublishedAssessmentData p, AssessmentGradingData a where a.publishedAssessmentId = p.publishedAssessmentId and a.assessmentGradingId = :id");
+            q.setLong("id", assessmentGradingId);
+            
+            return q.list();
+        };
+        List<String> titles = getHibernateTemplate().execute(hcb);
+        if (!titles.isEmpty()) {
+            result = titles.get(0);
+        }
+        
+        return result;
+    }
+    
+    /**
+     * [Explain the description for this method here].
+     * @param publishedAssessmentId
+     * @return
+     * @see org.sakaiproject.tool.assessment.facade.PublishedAssessmentFacadeQueriesAPI#getPublishedAssessmentDescription(java.lang.Long)
+     * @author NamTang
+     */
+    @Override
+    public String getPublishedAssessmentDescription(Long publishedAssessmentId) {
+        String result = null;
+        final HibernateCallback<List<String>> hcb = session -> {
+            Query q = session.createQuery(
+                    "select p.description from PublishedAssessmentData p where p.publishedAssessmentId = :id");
+            q.setLong("id", publishedAssessmentId);
+            
+            return q.list();
+        };
+        List<String> titles = getHibernateTemplate().execute(hcb);
+        if (!titles.isEmpty()) {
+            result = titles.get(0);
+        }
+        
+        return result;
+    }
+
+    @Override
+    public List<Long> getQuestionIds(final Long publishedAssessmentId) {
+        final HibernateCallback<List<Long>> hcb = session -> session.createQuery(
+                "select distinct i.itemId from PublishedItemData i, PublishedSectionData s, PublishedAssessmentData p, PublishedItemMetaData m "
+                        + "where p.publishedAssessmentId = :id and p = s.assessment and i.section = s and m.item.itemId = i.itemId and i.typeId = 1 and (m.label != 'OBJECTIVE' or (m.label = 'OBJECTIVE' and CHAR_LENGTH(m.entry) = 6))")
+                .setLong("id", publishedAssessmentId).list();
+        return getHibernateTemplate().execute(hcb);
     }
 }

@@ -83,6 +83,15 @@ public class PublishedAssessmentService extends AssessmentService{
         getBasicInfoOfAllPublishedAssessments(orderBy, ascending, siteId);
   }
   
+  // For module TOEIC
+  public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments(String agentId, String orderBy,
+          boolean ascending, String siteId, Boolean isToeic) {
+
+      // 2. get all takeable assessment available
+      return PersistenceService.getInstance().getPublishedAssessmentFacadeQueries()
+              .getBasicInfoOfAllPublishedAssessments(orderBy, ascending, siteId, isToeic);
+  }
+
   public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments2(String orderBy, boolean ascending, String siteId) {
 
 	  // 2. get all takeable assessment available

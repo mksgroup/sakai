@@ -19,7 +19,8 @@ import org.sakaiproject.tool.assessment.integration.helper.ifc.TagServiceHelper;
 import org.sakaiproject.tool.assessment.osid.shared.impl.IdImpl;
 
 import java.util.Map;
-
+import java.util.List;
+import org.sakaiproject.tool.assessment.data.dao.assessment.PublishedAnswer;
 public interface PublishedItemFacadeQueriesAPI {
 
 	public IdImpl getItemId(String id);
@@ -51,4 +52,29 @@ public interface PublishedItemFacadeQueriesAPI {
 	public Boolean itemExists(String itemId);
 
 	public void removeItemAttachment(Long itemAttachmentId);
+	
+	// For module TOEIC
+    public PublishedAnswer getPublishedAnswer(Long publishedAnswerId);
+
+    public List<Long> getAssessmentCorrectPublishedAnswerIds(Long publishedAssessmentId);
+
+    public PublishedAnswer getCorrectPublishedAnswerByItemId(Long publishedItemId);
+
+    /**
+     * [Give the description for method].
+     * @param publishedAnswerId
+     * @return
+     * @author ThachLN
+     */
+    public List<PublishedAnswer> getPublishedAnswers(List<Long> publishedAnswerId);
+
+    /**
+     * [Give the description for method].
+     * @param publishedItemIds
+     * @return
+     * @author ThachLN
+     */
+    public List<PublishedAnswer> getCorrectPublishedAnswerByItemIds(List<Long> publishedItemIds);
+
+    public Long getCorrectPublishedAnswerIdByItemId(Long publishedItemId);
 }

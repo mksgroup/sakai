@@ -197,6 +197,15 @@ public interface PublishedAssessmentFacadeQueriesAPI
   // added by daisy - please check the logic - I based this on the getBasicInfoOfAllActiveAssessment
   public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments(String orderBy, boolean ascending, String siteId);
 
+  /**
+   * For module TOEIC.
+   * @param orderBy
+   * @param ascending
+   * @param siteId
+   * @param isToeic
+   * @return
+   */
+  public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments(String orderBy, boolean ascending, String siteId, Boolean isToeic);
   public List<PublishedAssessmentFacade> getBasicInfoOfAllPublishedAssessments2(String orderBy, boolean ascending, String siteId);
   
   /**
@@ -318,6 +327,15 @@ public interface PublishedAssessmentFacadeQueriesAPI
 
   public List getQuestionsIdList(final Long publishedAssessmentId);
 
+  ////////////////////////////////////////////////////////////////////////////////////////////////////
+  // For module TOEIC
+  //
+  public String getPublishedAssessmentTitle(Long publishedAssessmentId);
+
+  public String getPublishedAssessmentDescription(Long publishedAssessmentId);
+
+  public List<Long> getQuestionIds(Long publishedAssessmentId);
+  // For module TOEIC.End
   public List<PublishedAssessmentData> getPublishedDeletedAssessments(String siteId);
 
   public void restorePublishedAssessment(Long publishedAssessmentId);
