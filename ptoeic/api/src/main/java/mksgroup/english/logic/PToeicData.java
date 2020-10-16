@@ -24,16 +24,16 @@ import java.util.List;
 import mksgroup.english.model.Item;
 
 /**
- * An example logic interface
+ * Interface for pre-processing data.
  * 
- * @author Mike Jennings (mike_jennings@unc.edu)
+ * @author ThachLN
  *
  */
-public interface ProjectLogic {
+public interface PToeicData {
 
 	/**
 	 * Get a list of Items
 	 * @return
 	 */
-	public List<Item> getItems();
+	List<Item> getItems();
 }

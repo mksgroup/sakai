@@ -29,14 +29,14 @@ import org.springframework.stereotype.Service;
 import mksgroup.english.model.Item;
 
 /**
- * Implementation of {@link ProjectLogic}
+ * Implementation of {@link PToeicData}
  * 
  * @author Mike Jennings (mike_jennings@unc.edu), ThachLN@gmail.com
  *
  */
 @Service
 @Component
-public class ProjectLogicImpl implements ProjectLogic {
+public class ProjectLogicImpl implements PToeicData {
 
 	private static final Logger log = Logger.getLogger(ProjectLogicImpl.class);
 

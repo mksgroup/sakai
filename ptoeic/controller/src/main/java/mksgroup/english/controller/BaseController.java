@@ -35,7 +35,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import lombok.Getter;
 import lombok.Setter;
-import mksgroup.english.logic.ProjectLogic;
+import mksgroup.english.logic.PToeicData;
 import mksgroup.english.logic.SakaiProxy;
 
 /**
@@ -50,7 +50,7 @@ public class BaseController {
 
     @Setter    // Used for Sakai Tool
     @Getter    // Used for Sakai Tool
-    ProjectLogic projectLogic;
+    PToeicData projectLogic;
 
     @Value("${theme.root}")
     String themeRoot;

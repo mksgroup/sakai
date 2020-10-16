@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
-    <artifactId>ptoeic</artifactId>
-    <groupId>ptoeic</groupId>
-    <version>22-SNAPSHOT</version>
-  </parent>
+
+	<!--  Comment to run standalone -->
+<!-- 	<parent> -->
+<!-- 		<artifactId>ptoeic</artifactId> -->
+<!-- 		<groupId>ptoeic</groupId> -->
+<!-- 		<version>22-SNAPSHOT</version> -->
+<!-- 	</parent> -->
 
     <groupId>ptoeic</groupId>
     <artifactId>ptoeic-web</artifactId>
@@ -18,7 +20,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<spring.version>4.3.25.RELEASE</spring.version>
 		<spring.security.version>4.2.13.RELEASE</spring.security.version>
-		<module.version>20.1</module.version>
+		<module.version>22_SNAPSHOT</module.version>
 		<thymeleaf.version>3.0.11.RELEASE</thymeleaf.version>
 		<sakai.hibernate.version>4.3.11.Final</sakai.hibernate.version>
 		<sakai.commons.fileupload.version>1.4</sakai.commons.fileupload.version>
