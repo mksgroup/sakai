@@ -5,9 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.naming.CommunicationException;
-
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import m.k.s.sakai.app.question.logic.QuestionData;
 import mksgroup.java.common.CommonUtil;
@@ -42,11 +39,12 @@ public class ToeicData {
         
         49.
      */
-    final static String PATTERN_NUMBERS2 = ".*(\\d\\d\\.\r\n[\\d|\\.|\r|\n]*\\d\\d\\.\r\n).*";
-    final static String PATTERN_NUMBERS1 = ".*(\\d\\d\\.\n[\\d|\\.|\n]*\\d\\d\\.\n).*";
+    // final static String PATTERN_NUMBERS2 = ".*(\\d\\d\\.\r\n[\\d|\\.|\r|\n]*\\d\\d\\.\r\n).*";
+    final static String PATTERN_NUMBERS2 = ".*(\\d\\d\\.\n[\\d\\.,\n\\s]*\\d\\d\\.\n).*";
+    final static String PATTERN_NUMBERS3 = "(\\d\\d\\d\\.\n).*";
     
     Map<String, String> mapIntro = new HashMap<String, String>();
-    Map<Integer, QuestionData> mapQuestionPart34 = new HashMap<Integer, QuestionData>();
+    Map<Integer, QuestionData> mapQuestion = new HashMap<Integer, QuestionData>();
     
 	public ToeicData(String text) {
 		this.text = text;
@@ -55,12 +53,12 @@ public class ToeicData {
 		extractIntros();
 		
 		// Step 2: Parse question in Part 3.
-		extractQuestionPart34(32, 55);
+		extractQuestionPart34(32, 70);
 		
 		// Step 3: Parse question in Part 4.
-//		extractIntroPart4();
+		extractIntroPart4();
 		
-//		extractQuestionPart34(71, 99);
+		extractQuestionPart34(71, 100);
 	}
 	
     /**
@@ -78,13 +76,14 @@ public class ToeicData {
     
     private void extractQuestionPart34(int startIdxQ, int endIdxQ) {
         QuestionData qd;
-        List<Integer> predetectQuestionNo;
 
         // Scan questions Part 3:  32 to 70
         // Scan questions Part 4:  71 to 100
         List<Integer> lstQuestionNo;
-        for (int i = startIdxQ; i <= endIdxQ; i++) {
-            
+        int i = startIdxQ;
+        int nextCurPos;
+        while (i <= endIdxQ) {
+  
             qd = extractNextQuestions(i);
             if (qd != null) {
                 // Do nothing
@@ -94,15 +93,22 @@ public class ToeicData {
                 log.debug("Could not extract question " + i + ". Try to extract by group.");
 
                 curPos = preCurPos;
+
                 log.debug("Reset current postion back to  " + curPos + ": " + text.substring(curPos, curPos + 20));
-                lstQuestionNo = extractGroupOfQuestions();
+                lstQuestionNo = extractGroupOfQuestions(i);
                 
                 if (lstQuestionNo != null) {
                     log.debug("Prepare to parse group of questions: " + lstQuestionNo.toString());
                     // Update the current position at the last number
-                    int lastQuestionNoOfGroup = i + lstQuestionNo.size() - 1;
-                    curPos = text.indexOf(lastQuestionNoOfGroup + ".", curPos);
-                    extractGroupOfQuestionContents(lstQuestionNo);
+                    int lastQuestionNoOfGroup = lstQuestionNo.get(lstQuestionNo.size() - 1);
+                    nextCurPos = text.indexOf(lastQuestionNoOfGroup + ".", curPos);
+                    
+                    if (nextCurPos == -1) {
+                        log.error("Could not extract question " + lstQuestionNo + " at position " + curPos);
+                    } else {
+                        curPos = nextCurPos;
+                        extractGroupOfQuestionContents(lstQuestionNo);
+                    }
                     
                     // Update i
                     i = lastQuestionNoOfGroup;
@@ -110,7 +116,8 @@ public class ToeicData {
                     log.warn(String.format("Could not parse from position %d: %s...", curPos, text.substring(curPos, curPos + 20)));
                 }
             }
-
+            
+            i++;
         }
         
     }
@@ -121,18 +128,31 @@ public class ToeicData {
      * 44.
      * 45.
      * ...
+     * <br/>
+     * End of number maybe: . or ,
+     * @param curQNo current question no.
      * @return
      */
-    private List<Integer> extractGroupOfQuestions() {
+    private List<Integer> extractGroupOfQuestions(int curQNo) {
         List<Integer> result;
         String nextText = text.substring(curPos);
+
+        if (curQNo == 44 || curQNo == 100) {
+            log.debug("");
+        }
         
         // Extract list of question numbers
-        String linesOfQuestionNumbers = CommonUtil.parsePattern(nextText, PATTERN_NUMBERS1);
-        
+        String pattern = (curQNo < 100 ) ? PATTERN_NUMBERS2 : PATTERN_NUMBERS3;
+        String linesOfQuestionNumbers = CommonUtil.parsePattern(nextText, pattern);
+
+
         if (linesOfQuestionNumbers == null) {
             return null;
         }
+
+        linesOfQuestionNumbers = linesOfQuestionNumbers.replace(',', '.');
+        
+
         result = new ArrayList<Integer>();
         String[] strQuestionNumbers = linesOfQuestionNumbers.split(".\n");
         
@@ -149,9 +169,12 @@ public class ToeicData {
     private void extractGroupOfQuestionContents(List<Integer> lstQuestionNo) {
         QuestionData qd;
         for (Integer i : lstQuestionNo) {
+            if (i == 80) {
+                log.debug("");
+            }
             qd = extractNextQuestionFromGroup(i);
             if (qd != null) {
-                mapQuestionPart34.put(i, qd);
+                mapQuestion.put(i, qd);
                 log.debug("Extracted question " + i + ": " + qd.getQuestion());
             } else {
                 log.error("Could not extract questions: " + lstQuestionNo + " from position " + curPos + ": " + text.substring(curPos, curPos + 20));
@@ -163,29 +186,20 @@ public class ToeicData {
     private QuestionData extractNextQuestionFromGroup(int questionNo) {
         QuestionData qd = null;
         List<String> answers;
-        // Get question
-        String subText = text.substring(curPos);
-        String regular = "(\\S.*)\n\n\\(A\\)";
+        String question = AppUtility.clean(substring(null, "(A)"));
         
-        String question = CommonUtil.parsePattern(subText, regular);
+        if (questionNo == 80) {
+            log.debug("Question=" + questionNo);
+        }
         if (question != null && isValid(question)) {
             qd = new QuestionData();
             qd.setQuestion(question);
             
             // Update current position
-            answers = new ArrayList<String>(4);
-            String option;
-            String endSign;
-            for (char j = 'A'; j <= 'D'; j++) {
-                endSign = j < 'D' ? String.format("(%c)", j + 1) : "\n";
-                option = substring(String.format("(%c)", j), endSign);
-
-                answers.add(option);
-
-                // Update answers
-                qd.setAnswers(answers);
-            }
+            answers = extractAnswers();
             
+            // Update answers
+            qd.setAnswers(answers);
         } else {
             log.error("Could not extract question at " + curPos + ": " + text.substring(curPos, curPos + 20));
         }
@@ -201,11 +215,16 @@ public class ToeicData {
      * @return QuestionData
      */
     private QuestionData extractNextQuestions(int questionNo) {
-        String startText = questionNo + ". ";
+        String startText = questionNo + ".";
     
         final String endText = "(A) ";
+
+        if (questionNo == 44) {
+            log.debug("");
+        }
         String question = substring(startText, endText);
         
+
         if (question != null && isValid(question)) {
             QuestionData qd;
             List<String> answers;
@@ -213,25 +232,43 @@ public class ToeicData {
             // Set content of question
             qd = new QuestionData();
             qd.setQuestion(question);
-            answers = new ArrayList<String>(4);
-            String option;
-            String endSign;
-            for (char j = 'A'; j <= 'D'; j++) {
-              endSign = j < 'D' ? String.format("(%c)", j+1) : "\n";
-              option = substring(String.format("(%c)", j), endSign);
-              
-              answers.add(option);
-              
-              // Update answers
-              qd.setAnswers(answers);
-            }
+            answers = extractAnswers();
+
+            qd.setAnswers(answers);
             
-            mapQuestionPart34.put(questionNo, qd);
+            if (questionNo == 44) {
+                log.debug("");
+            }
+            mapQuestion.put(questionNo, qd);
             
             return qd;
         } else {
             return null;
         }
+    }
+
+    /**
+     * [Give the description for method].
+     * @return
+     */
+    private List<String> extractAnswers() {
+        List<String> answers;
+        answers = new ArrayList<String>(4);
+        String option;
+        String startSign;
+        String endSign;
+        for (char j = 'A'; j <= 'D'; j++) {
+            endSign = j < 'D' ? String.format("(%c)", j + 1) : "\n";
+            startSign = String.format("(%c)", j);
+            option = substring(startSign, endSign);
+
+            // Remove the prefix: (A)..(D)
+            option = option.substring(startSign.length()).trim();
+
+            answers.add(option);
+        }
+
+        return answers;
     }
 
     /**
@@ -244,18 +281,18 @@ public class ToeicData {
      * @return
      */
     private boolean isValid(String question) {
-        String pattern = ".*(\\d\\d\\.\r\n).*";
-        String value = CommonUtil.parsePattern(text, pattern);
+        String pattern = PATTERN_NUMBERS2;
+        String value = CommonUtil.parsePattern(question, pattern);
         
         return value == null;
     }
 
     public QuestionData getQuestion(Integer questionNo) {
-        return mapQuestionPart34.get(questionNo);
+        return mapQuestion.get(questionNo);
     }
     
     public Map<Integer, QuestionData> getQuestions() {
-        return mapQuestionPart34;
+        return mapQuestion;
     }
 
     private void extractIntroPart4() {
@@ -271,7 +308,7 @@ public class ToeicData {
 	 */
 	private String substring(String startText, String endText) {
     	// Determine the position of startTest
-    	int posStart = text.indexOf(startText, curPos);
+    	int posStart = (startText != null) ? text.indexOf(startText, curPos) : (curPos + 1);
     	
     	if (posStart == -1) {
     		return null;
@@ -293,7 +330,7 @@ public class ToeicData {
     	preCurPos = curPos;
 
     	// Update position
-    	curPos = posEnd + endText.length();
+    	curPos = posEnd;
 
     	return subText;
     }

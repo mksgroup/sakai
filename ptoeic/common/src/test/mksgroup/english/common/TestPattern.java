@@ -39,7 +39,7 @@ public class TestPattern {
                 "26\r\n" + 
                 "\r\n" + 
                 "Where are the speakers?";
-        String pattern = ".*(\\d\\d\\.\r\n[\\d|\\.|\r|\n]*\\d\\d\\.\r\n).*";
+        String pattern = ".*(\\d\\d\\.\r\n[\\d\\.\r\n]*\\d\\d\\.\r\n).*";
         String value = CommonUtil.parsePattern(text, pattern);
         
         System.out.println(value);
@@ -68,6 +68,33 @@ public class TestPattern {
         
 //        assertTrue(isValid(text));
     }
+    
+    @Test
+    public void testPattern3() {
+        String text = "    44.\n" + 
+                "\n" + 
+                "    45.\n" + 
+                "\n" + 
+                "    46.\n" + 
+                "\n" + 
+                "    47.\n" + 
+                "\n" + 
+                "    48.\n" + 
+                "\n" + 
+                "    49.\n" + 
+                "\n" + 
+                "    26\n" + 
+                "\n" + 
+                "    Where are the speakers?";
+
+        String pattern = "(\\d\\d\\.\n\n[\\d\\.,\n\\s]*\\d\\d\\.\n\n).*";
+//        String pattern = "(\\d\\d\\.\n\n[ \\d]).*";
+        String value = CommonUtil.parsePattern(text, pattern);
+        
+        System.out.println(value);
+        assertNotNull(value);
+    }
+
     public static String parsePattern(String text, String regular) {
         Pattern pattern = Pattern.compile(regular);
         Matcher matcher = pattern.matcher(text);

@@ -75,4 +75,13 @@ public class AppUtilityTest {
 		
 		System.out.println(question32);
 	}
+	
+	@Test
+	public void testClean() {
+	    String st = "5.\n" + 
+	            "\n" + 
+	            "Where are the speakers?";
+	    st = AppUtility.clean(st);
+	    assertEquals("Where are the speakers?", st);
+	}
 }

@@ -100,43 +100,92 @@ public class AppUtility {
         
         return xmlDoc;
     }
+
+    /**
+     * Write Part3, Part4 to Excel.
+     * @param toeicData
+     * @param outExcelPath
+     * @throws IOException
+     */
     public static void write(ToeicData toeicData, String outExcelPath) throws IOException {
         Workbook wb = PoiUtil.loadWorkbookByResource("/Template_TOEIC.xlsx");
-        
-        Sheet sheet3 = wb.getSheet("Part3");
+        final String[] PARTS = {"Part3", "Part4"};
+        Sheet sheet;
         // Scan question no
-        int lastRowIdx = sheet3.getLastRowNum();
-        Row row;
+        int lastRowIdx;
+        Row row;;
         Object questionNoObj;
         Integer questionNo;
         QuestionData questionData;
         int answerColIdx;
-        for (int i = 2; i < lastRowIdx; i++) {
-            row = sheet3.getRow(i);
-            questionNoObj = PoiUtil.getValue(row, 0);
+
+        for (String part : PARTS) {
+            sheet = wb.getSheet(part);
+            lastRowIdx = sheet.getLastRowNum();
             
-            if (questionNoObj instanceof Double) {
-                questionNo = ((Double) questionNoObj).intValue();
-                if (31 < questionNo && questionNo < 71) {
-                    questionData = toeicData.getQuestion(questionNo);
-                    if (questionData != null) {
-                        PoiUtil.setContent(row, 1, questionData.getQuestion());
-                        
-                        answerColIdx = 7; // Column index of A
-                        for (String answer : questionData.getAnswers()) {
-                            PoiUtil.setContent(row, answerColIdx, answer);
-                            answerColIdx++;
+            for (int i = 2; i <= lastRowIdx; i++) {
+                row = sheet.getRow(i);
+                questionNoObj = PoiUtil.getValue(row, 0);
+                
+                if (questionNoObj instanceof Double) {
+                    questionNo = ((Double) questionNoObj).intValue();
+                    
+                    if (31 < questionNo && questionNo < 101) {
+
+                        questionData = toeicData.getQuestion(questionNo);
+                        if (questionData != null) {
+                            PoiUtil.setContent(row, 1, questionData.getQuestion());
+                            
+                            answerColIdx = 7; // Column index of A
+                            for (String answer : questionData.getAnswers()) {
+                                PoiUtil.setContent(row, answerColIdx, answer);
+                                answerColIdx++;
+                            }
+                        } else {
+                            log.warn("Question not found at i = " + questionNo);
                         }
                     } else {
-                        log.warn("Question not found at i = " + i);
+                        log.warn("Has not processed question " + questionNo);
                     }
+                } else if (questionNoObj != null) {
+                    LOG.warn("Unknown data type:" + questionNoObj.getClass());
                 }
-            } else if (questionNoObj != null) {
-                LOG.warn("Unknown data type:" + questionNoObj.getClass());
+   
             }
         }
         
         PoiUtil.writeExcelFile(wb, outExcelPath);
         
+    }
+    
+    /**
+     * Remove special character in prefix of question.<br/>
+     * For example:
+     * 9.
+
+       26
+
+       Where are the speakers?
+     * @param substring
+     * @return
+     */
+    public static String clean(String st) {
+        String result;
+        int i = 0;
+        boolean hasSpecialChar = true;
+        char c;
+        int len = (st != null) ? st.length() : 0;
+        do {
+            c = st.charAt(i);
+            hasSpecialChar = Character.isDigit(c) || c == '\n' || c == '.';
+            i++;
+        } while (i < len && hasSpecialChar);
+        
+        // Replace Enter character by Space
+        result = (hasSpecialChar) ? st: st.substring(i - 1);
+        result = result.replace("\r\n", " ");
+        result = result.replace("\n", " ");
+
+        return result;
     }
 }
