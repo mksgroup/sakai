@@ -8,7 +8,9 @@ public class PToeicTest {
 
     @Test
     public void testMain() {
-        PToeic.main(new String[] {"D:/Temp/TOEIC1/ETS_2020_LC_#1.txt", "D:/Temp/TOEIC1/ETS_2020_LC_#1.xlsx"});
+        String folderPath = "D:\\Temp\\TOEIC1\\ETS_2020_#1";
+
+        PToeic.main(new String[] {folderPath});
     }
 
 }

@@ -23,6 +23,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -107,9 +110,17 @@ public class AppUtility {
      * @param outExcelPath
      * @throws IOException
      */
-    public static void write(ToeicData toeicData, String outExcelPath) throws IOException {
-        Workbook wb = PoiUtil.loadWorkbookByResource("/Template_TOEIC.xlsx");
-        final String[] PARTS = {"Part3", "Part4"};
+    public static Workbook write(Workbook currentWb, String templateFilePath, ToeicData toeicData) throws IOException {
+        Workbook wb;
+        
+        if (currentWb != null) {
+            wb = currentWb;
+        } else {
+            wb = (templateFilePath == null) ? PoiUtil.loadWorkbookByResource("/Template_TOEIC.xlsx"):
+                                                       PoiUtil.loadWorkbook(new FileInputStream(templateFilePath));
+        }
+
+        final String[] PARTS = {"Part3", "Part4", "Part5"};
         Sheet sheet;
         // Scan question no
         int lastRowIdx;
@@ -123,14 +134,15 @@ public class AppUtility {
             sheet = wb.getSheet(part);
             lastRowIdx = sheet.getLastRowNum();
             
-            for (int i = 2; i <= lastRowIdx; i++) {
-                row = sheet.getRow(i);
+            // Start at row 1
+            for (int idxRow = 1; idxRow <= lastRowIdx; idxRow++) {
+                row = sheet.getRow(idxRow);
                 questionNoObj = PoiUtil.getValue(row, 0);
                 
                 if (questionNoObj instanceof Double) {
                     questionNo = ((Double) questionNoObj).intValue();
                     
-                    if (31 < questionNo && questionNo < 101) {
+//                    if (31 < questionNo && questionNo < 130) {
 
                         questionData = toeicData.getQuestion(questionNo);
                         if (questionData != null) {
@@ -144,9 +156,9 @@ public class AppUtility {
                         } else {
                             log.warn("Question not found at i = " + questionNo);
                         }
-                    } else {
-                        log.warn("Has not processed question " + questionNo);
-                    }
+//                    } else {
+//                        log.warn("Has not processed question " + questionNo);
+//                    }
                 } else if (questionNoObj != null) {
                     LOG.warn("Unknown data type:" + questionNoObj.getClass());
                 }
@@ -154,10 +166,91 @@ public class AppUtility {
             }
         }
         
-        PoiUtil.writeExcelFile(wb, outExcelPath);
+//        PoiUtil.writeExcelFile(wb, outExcelPath);
+        return wb;
         
     }
     
+    public static Workbook writePart6(Workbook wb, ToeicDataPart56 toeicData) throws IOException {
+        Sheet sheet = wb.getSheet("Part6");
+        Row row;
+        Object questionNoObj;
+        Integer questionNo;
+        QuestionData questionData;
+        int answerColIdx;
+
+     // Scan question no
+        int lastRowIdx;
+        
+//        toeicData.mapQPart6
+        
+        lastRowIdx = sheet.getLastRowNum();
+        // Start at row 1
+        for (int idxRow = 1; idxRow <= lastRowIdx; idxRow++) {
+            row = sheet.getRow(idxRow);
+            questionNoObj = PoiUtil.getValue(row, 0);
+            
+            if (questionNoObj instanceof Double) {
+                questionNo = ((Double) questionNoObj).intValue();
+
+                questionData = toeicData.getQuestion(questionNo);
+                if (questionData != null) {
+                    // Don't write the content of sub question
+                    // PoiUtil.setContent(row, 1, questionData.getQuestion());
+                    
+                    answerColIdx = 7; // Column index of A
+                    for (String answer : questionData.getAnswers()) {
+                        PoiUtil.setContent(row, answerColIdx, answer);
+                        answerColIdx++;
+                    }
+                } else {
+                    log.warn("Question not found at i = " + questionNo);
+                }
+            } else if (questionNoObj == null) {
+                // Write the main contain of question
+                // Detect next sub questions
+                List<Integer> nextQuestions = nextSubQuestions(sheet, idxRow);
+                int firstNo = nextQuestions.get(0);
+                int lastNo = nextQuestions.get(nextQuestions.size() - 1);
+                String mainQuestionKey = String.format("%s-%s", firstNo, lastNo);
+                questionData = toeicData.mapQPart6.get(mainQuestionKey);
+                
+                // Write to Excel
+                PoiUtil.setContent(row, 1, questionData.getQuestion());
+            } else {
+                LOG.warn("Unknown data type:" + questionNoObj.getClass());
+            }
+
+        }
+        
+        return wb;
+    }
+    
+    private static List<Integer> nextSubQuestions(Sheet sheet, int idxCurRow) {
+        List<Integer> listQuesionNo = new ArrayList<Integer>();
+        Row row;
+        Object questionNoObj = null;
+        int questionNo;
+
+        // Net row
+        do {
+            idxCurRow++;
+            row = sheet.getRow(idxCurRow);
+            
+            if (row != null) {
+                questionNoObj = PoiUtil.getValue(row, 0);
+    
+                if (questionNoObj instanceof Double) {
+                    questionNo = ((Double) questionNoObj).intValue();
+                    listQuesionNo.add(questionNo);
+                }
+            } else {
+                log.error(String.format("Could not get row at %d of sheet '%s'", idxCurRow, sheet.getSheetName()));
+            }
+        } while ((questionNoObj != null) && (questionNoObj instanceof Double) && (row != null));
+        
+        return listQuesionNo;
+    }
     /**
      * Remove special character in prefix of question.<br/>
      * For example:
@@ -187,5 +280,9 @@ public class AppUtility {
         result = result.replace("\n", " ");
 
         return result;
+    }
+    public static String removePrefixNo(String question) {
+        Pattern p = Pattern.compile("(\\d{2,3}\\.\\s)");
+        return p.matcher(question).replaceAll("");
     }
 }

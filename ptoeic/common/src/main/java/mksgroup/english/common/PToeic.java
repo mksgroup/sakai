@@ -15,23 +15,13 @@ import mksgroup.java.common.FileUtil;
 public class PToeic {
 
     /**
-     * Usage: ptoeic <input.txt> <out-excel-path>.
+     * Usage: ptoeic <path>.
      * @param args
      */
     public static void main(String[] args) {
-        String inputTextFile = args[0];
-        String outExcelPath = args[1];
-        String text;
+        String folderPath = args[0];
 
-        try {
-            text = FileUtil.getContent(new File(inputTextFile), "utf-8");
-            ToeicData toeicData = new ToeicData(text);
-
-            AppUtility.write(toeicData, outExcelPath);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        ToeicParser parser = new ToeicParser(folderPath);
     }
 
 }

@@ -84,4 +84,15 @@ public class AppUtilityTest {
 	    st = AppUtility.clean(st);
 	    assertEquals("Where are the speakers?", st);
 	}
+
+    @Test
+    public void testRemovePrefixNo() {
+        String st = "38. What type of company do the men work for?";
+        st = AppUtility.removePrefixNo(st);
+        assertEquals("What type of company do the men work for?", st);
+        
+        st = "138. What type of company do the men work for?";
+        st = AppUtility.removePrefixNo(st);
+        assertEquals("What type of company do the men work for?", st);
+    }
 }
