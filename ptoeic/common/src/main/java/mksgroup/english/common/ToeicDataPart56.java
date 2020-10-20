@@ -37,7 +37,10 @@ public class ToeicDataPart56 extends ToeicData {
 		// Step 3: Parse question in Part 6.
 		extractIntroPart6();
 		
-		extractQuestionPart6(131, 146);
+		extractQuestionPart67(131, 146);
+		
+		extractIntroPart7();
+		extractQuestionPart67(147, 200);
 	}
 	
 
@@ -47,7 +50,12 @@ public class ToeicDataPart56 extends ToeicData {
     }
 
 
-    private void extractQuestionPart6(int startIdxQ, int endIdxQ) {
+    private void extractIntroPart7() {
+        String content = substring("PART 7", ".\n\n");
+        mapIntro.put("PART7_INTRO", content);
+    }
+
+    private void extractQuestionPart67(int startIdxQ, int endIdxQ) {
         // Scan questions Part 3:  32 to 70
         // Scan questions Part 4:  71 to 100
         List<Integer> lstQuestionNo;

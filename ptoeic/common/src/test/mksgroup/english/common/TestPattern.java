@@ -94,6 +94,32 @@ public class TestPattern {
         System.out.println(value);
         assertNotNull(value);
     }
+    
+//    @Test
+//    public void extactFeedBack() {
+//        String text = "    44.\n" + 
+//                "\n" + 
+//                "    45.\n" + 
+//                "\n" + 
+//                "    46.\n" + 
+//                "\n" + 
+//                "    47.\n" + 
+//                "\n" + 
+//                "    48.\n" + 
+//                "\n" + 
+//                "    49.\n" + 
+//                "\n" + 
+//                "    26\n" + 
+//                "\n" + 
+//                "    Where are the speakers?";
+//
+//        String pattern = "\\(A\\)[\s](.*)\\.";
+////        String pattern = "(\\d\\d\\.\n\n[ \\d]).*";
+//        String value = CommonUtil.parsePattern(text, pattern);
+//        
+//        System.out.println(value);
+//        assertNotNull(value);
+//    }
 
     public static String parsePattern(String text, String regular) {
         Pattern pattern = Pattern.compile(regular);
@@ -115,4 +141,6 @@ public class TestPattern {
 
         return listOfQuestionNo != null;
     }
+    
+    
 }

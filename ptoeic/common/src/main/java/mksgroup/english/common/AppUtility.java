@@ -42,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 import m.k.s.sakai.app.question.logic.QuestionData;
 import mksgroup.english.common.AppUtility;
 import mksgroup.java.common.CommonUtil;
+import mksgroup.java.common.FileUtil;
 import mksgroup.java.poi.PoiUtil;
 
 /**
@@ -52,11 +53,21 @@ import mksgroup.java.poi.PoiUtil;
  */
 @Slf4j
 public class AppUtility {
+    private static final int IDX_COL_ANSWER_A = 7;
+    private static final int IDX_COL_FEEDBACK_A = 12;
     /** For logging. */
     private static final Logger LOG = Logger.getLogger(AppUtility.class);
 
 
-    
+    public static String ENGLISH_WORDS;
+    static {
+        try {
+            ENGLISH_WORDS = FileUtil.getContent("/words.txt", "utf-8");
+        } catch (IOException e) {
+            log.error("Could not read English work file words.txt", e);
+        }
+    }
+
     public static String substring(String text, String startText, String endText) {
     	// Determine the position of startTest
     	int posStart = text.indexOf(startText);
@@ -120,7 +131,7 @@ public class AppUtility {
                                                        PoiUtil.loadWorkbook(new FileInputStream(templateFilePath));
         }
 
-        final String[] PARTS = {"Part3", "Part4", "Part5"};
+        final String[] PARTS = {"Part1", "Part2", "Part3", "Part4", "Part5"};
         Sheet sheet;
         // Scan question no
         int lastRowIdx;
@@ -129,6 +140,7 @@ public class AppUtility {
         Integer questionNo;
         QuestionData questionData;
         int answerColIdx;
+        int feedbackColIdx;
 
         for (String part : PARTS) {
             sheet = wb.getSheet(part);
@@ -142,23 +154,31 @@ public class AppUtility {
                 if (questionNoObj instanceof Double) {
                     questionNo = ((Double) questionNoObj).intValue();
                     
-//                    if (31 < questionNo && questionNo < 130) {
-
-                        questionData = toeicData.getQuestion(questionNo);
-                        if (questionData != null) {
+                    questionData = toeicData.getQuestion(questionNo);
+                    if (questionData != null) {
+                        // Write the content of question
+                        if (questionData.getQuestion() != null) {
                             PoiUtil.setContent(row, 1, questionData.getQuestion());
-                            
-                            answerColIdx = 7; // Column index of A
-                            for (String answer : questionData.getAnswers()) {
-                                PoiUtil.setContent(row, answerColIdx, answer);
-                                answerColIdx++;
-                            }
-                        } else {
-                            log.warn("Question not found at i = " + questionNo);
                         }
-//                    } else {
-//                        log.warn("Has not processed question " + questionNo);
-//                    }
+                        
+                        // Write the answer key
+                        if (questionData.getAnswers() != null) {
+                            answerColIdx = IDX_COL_ANSWER_A; // Column index of A
+                            for (String answer : questionData.getAnswers()) {
+                                PoiUtil.setContent(row, answerColIdx++, answer);
+                            }
+                        }
+                        
+                        // write feedback
+                        if (questionData.getFeedbacks() != null) {
+                            feedbackColIdx = IDX_COL_FEEDBACK_A;
+                            for (String feedback: questionData.getFeedbacks()) {
+                                PoiUtil.setContent(row, feedbackColIdx++, feedback);
+                            }
+                        }
+                    } else {
+                        log.warn("Question not found at i = " + questionNo);
+                    }
                 } else if (questionNoObj != null) {
                     LOG.warn("Unknown data type:" + questionNoObj.getClass());
                 }
@@ -172,61 +192,108 @@ public class AppUtility {
     }
     
     public static Workbook writePart6(Workbook wb, ToeicDataPart56 toeicData) throws IOException {
-        Sheet sheet = wb.getSheet("Part6");
+        Sheet sheet;
         Row row;
         Object questionNoObj;
         Integer questionNo;
         QuestionData questionData;
         int answerColIdx;
 
-     // Scan question no
         int lastRowIdx;
+
+        final String[] PARTS = {"Part6", "Part7"};
         
-//        toeicData.mapQPart6
-        
-        lastRowIdx = sheet.getLastRowNum();
-        // Start at row 1
-        for (int idxRow = 1; idxRow <= lastRowIdx; idxRow++) {
-            row = sheet.getRow(idxRow);
-            questionNoObj = PoiUtil.getValue(row, 0);
+        for (String part : PARTS) {
+            sheet = wb.getSheet(part);
+            lastRowIdx = sheet.getLastRowNum();
             
-            if (questionNoObj instanceof Double) {
-                questionNo = ((Double) questionNoObj).intValue();
-
-                questionData = toeicData.getQuestion(questionNo);
-                if (questionData != null) {
-                    // Don't write the content of sub question
-                    // PoiUtil.setContent(row, 1, questionData.getQuestion());
-                    
-                    answerColIdx = 7; // Column index of A
-                    for (String answer : questionData.getAnswers()) {
-                        PoiUtil.setContent(row, answerColIdx, answer);
-                        answerColIdx++;
-                    }
-                } else {
-                    log.warn("Question not found at i = " + questionNo);
-                }
-            } else if (questionNoObj == null) {
-                // Write the main contain of question
-                // Detect next sub questions
-                List<Integer> nextQuestions = nextSubQuestions(sheet, idxRow);
-                int firstNo = nextQuestions.get(0);
-                int lastNo = nextQuestions.get(nextQuestions.size() - 1);
-                String mainQuestionKey = String.format("%s-%s", firstNo, lastNo);
-                questionData = toeicData.mapQPart6.get(mainQuestionKey);
+            // Start at row 1
+            for (int idxRow = 1; idxRow <= lastRowIdx; idxRow++) {
+                row = sheet.getRow(idxRow);
+                questionNoObj = PoiUtil.getValue(row, 0);
                 
-                // Write to Excel
-                PoiUtil.setContent(row, 1, questionData.getQuestion());
-            } else {
-                LOG.warn("Unknown data type:" + questionNoObj.getClass());
+                if (questionNoObj instanceof Double) {
+                    questionNo = ((Double) questionNoObj).intValue();
+    
+                    questionData = toeicData.getQuestion(questionNo);
+                    if (questionData != null) {
+                        // Don't write the content of sub question
+                        if ("Part6".contentEquals(part) ) {
+                            // Do nothing
+                        } else if ("Part7".contentEquals(part)) {
+                            PoiUtil.setContent(row, 1, questionData.getQuestion());
+                        }
+                        
+                        answerColIdx = 7; // Column index of A
+                        for (String answer : questionData.getAnswers()) {
+                            PoiUtil.setContent(row, answerColIdx, answer);
+                            answerColIdx++;
+                        }
+                    } else {
+                        log.warn("Question not found at i = " + questionNo);
+                    }
+                } else if (questionNoObj == null && "Part6".contentEquals(part) ) {
+                    // Write the main contain of question
+                    // Detect next sub questions
+                    List<Integer> nextQuestions = nextSubQuestions(sheet, idxRow);
+                    int firstNo = nextQuestions.get(0);
+                    int lastNo = nextQuestions.get(nextQuestions.size() - 1);
+                    String mainQuestionKey = String.format("%s-%s", firstNo, lastNo);
+                    questionData = toeicData.mapQPart6.get(mainQuestionKey);
+                    
+                    // Write to Excel
+                    PoiUtil.setContent(row, 1, questionData.getQuestion());
+                } else if (questionNoObj != null) {
+                    LOG.warn("Unknown data type:" + questionNoObj.getClass());
+                } else {
+                    // Do nothing.
+                }
+    
             }
-
         }
         
         return wb;
     }
     
-    private static List<Integer> nextSubQuestions(Sheet sheet, int idxCurRow) {
+    public static Workbook writeAnswerKeys(Workbook wb, ToeicData transcriptData) {
+        final String[] PARTS = {"Part1", "Part2", "Part3", "Part4"};
+        Sheet sheet;
+        // Scan question no
+        int lastRowIdx;
+        Row row;;
+        Object questionNoObj;
+        Integer questionNo;
+        QuestionData qd;
+
+        for (String part : PARTS) {
+            sheet = wb.getSheet(part);
+            lastRowIdx = sheet.getLastRowNum();
+            
+            // Start at row 1
+            for (int idxRow = 1; idxRow <= lastRowIdx; idxRow++) {
+                row = sheet.getRow(idxRow);
+                questionNoObj = PoiUtil.getValue(row, 0);
+                
+                if (questionNoObj instanceof Double) {
+                    questionNo = ((Double) questionNoObj).intValue();
+                    
+                    qd = transcriptData.mapQuestion.get(questionNo);
+                    if (qd != null) {
+                        PoiUtil.setContent(row, 6, qd.getCorrectAnswer());
+                    } else {
+                        log.warn("Not found key anwser of question " + questionNo);
+                    }
+                } else if (questionNoObj != null) {
+                    // Do nothing
+                }
+   
+            }
+        }
+        
+        return wb;
+    }
+    
+    static List<Integer> nextSubQuestions(Sheet sheet, int idxCurRow) {
         List<Integer> listQuesionNo = new ArrayList<Integer>();
         Row row;
         Object questionNoObj = null;
@@ -285,4 +352,23 @@ public class AppUtility {
         Pattern p = Pattern.compile("(\\d{2,3}\\.\\s)");
         return p.matcher(question).replaceAll("");
     }
+
+    public static boolean checkEnglishWord(String word) {
+        boolean valid;
+
+        if (word.startsWith("OK?")) {
+            log.debug("");
+        }
+        // Void special charaters: ' ? 
+        String[] subwords = word.split("[’'\\?\\.;,\\(\\)]");
+        
+        if (subwords != null && subwords.length > 0) {
+            valid = ENGLISH_WORDS.contains(subwords[0].toLowerCase() + '\n');
+        } else {
+            valid = ENGLISH_WORDS.contains(word.toLowerCase()  + '\n');
+        }
+
+        return valid;
+    }
+
 }

@@ -260,19 +260,23 @@ public class ToeicData {
         }
     }
 
+    List<String> extractAnswers() {
+        return extractAnswers('A', 'D');
+    }
     /**
      * [Give the description for method].
      * @return
      */
-    private List<String> extractAnswers() {
+    List<String> extractAnswers(char startOption, char endOption) {
         List<String> answers;
-        answers = new ArrayList<String>(4);
+        answers = new ArrayList<String>(endOption - startOption + 1);
         String option;
         String startSign;
         String endSign;
-        for (char j = 'A'; j <= 'D'; j++) {
-            endSign = j < 'D' ? String.format("(%c)", j + 1) : "\n";
-            startSign = String.format("(%c)", j);
+        
+        for (char i = startOption; i <= endOption; i++) {
+            endSign = i < endOption ? String.format("(%c)", i + 1) : "\n";
+            startSign = String.format("(%c)", i);
             option = substring(startSign, endSign);
 
             // Remove the prefix: (A)..(D)
@@ -348,5 +352,61 @@ public class ToeicData {
     	return subText;
     }
 
+    String extractDialog(String groupQuestionNo) {
+        StringBuffer sb = new StringBuffer();
 
+        // Start at line of groupQuestion no such as: 38-40 39! CHS}
+        int idxStart = text.indexOf(groupQuestionNo, curPos);
+        
+        if (idxStart > -1) {
+            int idxNextEndline = text.indexOf('\n', idxStart);
+            String line = text.substring(idxStart, idxNextEndline);
+
+            boolean validLine = true;
+            do {
+                idxStart += line.length() + 1;
+                idxNextEndline = text.indexOf('\n', idxStart);
+                line = text.substring(idxStart, idxNextEndline);
+
+                if (line != null && (line.length() == 0 || line.charAt(0) == '\n') || " ".contentEquals(line)) {
+                    if ("\n".contentEquals(line)) {
+                        sb.append(line);
+                    }
+                    continue;
+                }
+                // Valid line contains one of the token: M-, W-, (\\d, \n, English word.
+                String[] words = line.split(" ");
+                if (words != null && words.length > 0) {
+                    if (isValidTokenDialog(words[0])) {
+                        // Go next
+                        sb.append(line).append("\n");
+                    } else {
+                        // Stop
+                        validLine = false;
+                    }
+                } else {
+                    log.warn("Invalid line: " + line);
+                }
+            } while (validLine);
+        } else {
+            log.warn("Could to detect line of group question: " + groupQuestionNo);
+        }
+        preCurPos = curPos;
+        curPos += sb.length();
+
+        return sb.toString();
+    }
+    private boolean isValidTokenDialog(String word) {
+        final String[] PREFIX = {"M-", "W-", "(", "\n"};
+        
+        for (String prefix : PREFIX) {
+            if (word.startsWith(prefix)) {
+                return true;
+            }
+        }
+        
+        // Check English dictionary.
+        
+        return AppUtility.checkEnglishWord(word);
+    }
 }
