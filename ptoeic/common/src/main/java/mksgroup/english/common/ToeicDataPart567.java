@@ -12,7 +12,7 @@ import m.k.s.sakai.app.question.logic.QuestionData;
 import mksgroup.java.common.CommonUtil;
 
 @Slf4j
-public class ToeicDataPart56 extends ToeicData {
+public class ToeicDataPart567 extends ToeicData {
     Map<Object, QuestionData> mapQPart6 = new HashMap<Object, QuestionData>();
     
     final static String[][] POS_MARKS = {
@@ -21,12 +21,15 @@ public class ToeicDataPart56 extends ToeicData {
     };
 
     
-    public ToeicDataPart56() {
+    public ToeicDataPart567() {
         super();
     }
 
-	public ToeicDataPart56(String text) {
+	public ToeicDataPart567(String text) {
 		this.text = text;
+		
+		// Pre-processing: replace \n \n by \n\n
+		this.text = this.text.replace("\n \n", "\n\n");
 		
 		// Step 1: Parse introduction.
 		extractIntros(POS_MARKS);
@@ -64,19 +67,23 @@ public class ToeicDataPart56 extends ToeicData {
         int endQuestionNo;
         while (i <= endIdxQ) {
   
-            if (i == 109) {
+            if (i == 176) {
                 log.debug("");
             }
-            i = extractGroupQuestion();
+            i = extractGroupQuestion(i);
 
             i++;
         }
     }
 
-    private int extractGroupQuestion() {
+    private int extractGroupQuestion(int questionNo) {
         QuestionData qd = new QuestionData();
+
         String groupQuestion = substring("Questions 1", "\n\n1");
         
+        if (questionNo == 176) {
+            log.debug("");
+        }
         // Part question indices of sub questions. Ex: Questions 131-134
         Pattern pattern = Pattern.compile("Questions (\\d{3})-(\\d{3})");
         Matcher matcher = pattern.matcher(groupQuestion);
