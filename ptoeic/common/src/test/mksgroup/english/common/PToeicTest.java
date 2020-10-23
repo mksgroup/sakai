@@ -10,6 +10,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.junit.Test;
 
+import mksgroup.java.common.CommonUtil;
+import mksgroup.java.common.FileUtil;
 import mksgroup.java.poi.PoiUtil;
 
 public class PToeicTest {
@@ -22,13 +24,15 @@ public class PToeicTest {
 
     @Test
     public void testMain() {
-        String folderPath = "D:\\Temp\\TOEIC1\\ETS_2020_#1";
+        String folderPath = "D:\\Temp\\TOEIC3\\ETS_2020_N3";
 
         PToeic.main(new String[] {folderPath});
         
         // Read the result again
         try {
-            Workbook wb = PoiUtil.loadWorkbook(new FileInputStream("D:\\Temp\\TOEIC1\\ETS_2020_#1\\ETS_2020_#1.xlsx"));
+            String excelFileName = FileUtil.getFilename(folderPath);
+            String outputExcelPath = FileUtil.buildPath(folderPath, excelFileName);
+            Workbook wb = PoiUtil.loadWorkbook(new FileInputStream(outputExcelPath));
             Sheet sheet;
             Row row;
             final String[] PARTS = {"Part1", "Part2", "Part3", "Part4"};

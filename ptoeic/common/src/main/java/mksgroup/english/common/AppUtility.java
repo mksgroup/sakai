@@ -191,7 +191,7 @@ public class AppUtility {
         
     }
     
-    public static Workbook writePart6(Workbook wb, ToeicDataPart56 toeicData) throws IOException {
+    public static Workbook writePart6(Workbook wb, ToeicDataPart567 toeicData) throws IOException {
         Sheet sheet;
         Row row;
         Object questionNoObj;

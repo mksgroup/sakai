@@ -26,7 +26,8 @@ public class ToeicTranscriptData extends ToeicData {
         
         extractTranscriptPart12(1, 31);
         
-        extractTranscriptPart3(32, 70);
+        extractTranscriptPart34("Part3", 32, 70);
+        extractTranscriptPart34("Part4", 71, 100);
     }
 
     private void extractTranscriptPart12(int startIdxQ, int endIdxQ) {
@@ -73,8 +74,8 @@ public class ToeicTranscriptData extends ToeicData {
      * @param startIdxQ
      * @param endIdxQ
      */
-    private void extractTranscriptPart3(int startIdxQ, int endIdxQ) {
-        Sheet sheet = wb.getSheet("Part3");
+    private void extractTranscriptPart34(String partName, int startIdxQ, int endIdxQ) {
+        Sheet sheet = wb.getSheet(partName);
         Row row;
         Object questionNoObj;
         Integer questionNo;

@@ -55,6 +55,9 @@ public class ToeicData {
 	public ToeicData(String text) {
 		this.text = text;
 		
+		// Pre-processing: replace \n \n by \n\n
+		this.text = this.text.replace("\n \n", "\n\n");
+        
 		// Step 1: Parse introductions from Part 1 to Part 3.
 		extractIntros(POS_MARKS);
 		
@@ -91,7 +94,7 @@ public class ToeicData {
         int nextCurPos;
         while (i <= endIdxQ) {
   
-            if (i == 109) {
+            if (i == 126) {
                 log.debug("");
             }
             qd = extractNextQuestions(i);
@@ -230,7 +233,7 @@ public class ToeicData {
     
         final String endText = "(A) ";
 
-        if (questionNo == 109) {
+        if (questionNo == 126) {
             log.debug("");
         }
         String question = substring(startText, endText);
