@@ -21,6 +21,7 @@ public class ToeicTranscriptData extends ToeicData {
     public ToeicTranscriptData(ToeicData lcTd, String lcTranscriptTxt, Workbook wb) {
         this.mapQuestion = lcTd.mapQuestion;
         this.text = lcTranscriptTxt;
+        preprocess();
         this.wb = wb;
         extractCorrectedAnswer(1, 100);
         
@@ -37,7 +38,7 @@ public class ToeicTranscriptData extends ToeicData {
             if (questionNo == 2) {
                 log.debug("");
             }
-            String regular = questionNo + "\\s[WwMm\n][-\\w\\W]";
+            String regular = questionNo + "[\\s]++[WwMm\n]+[-\\w\\W]";
             Pattern pattern = Pattern.compile(regular);
 
             Matcher matcher = pattern.matcher(text);
@@ -80,7 +81,6 @@ public class ToeicTranscriptData extends ToeicData {
         Object questionNoObj;
         Integer questionNo;
         QuestionData questionData;
-        int answerColIdx;
 
         String currentFeedback = null;
         int firstQuestionNo;
@@ -99,6 +99,10 @@ public class ToeicTranscriptData extends ToeicData {
                 firstQuestionNo = nextQuestions.get(0);
                 int lastNo = nextQuestions.get(nextQuestions.size() - 1);
                 String mainQuestionKey = String.format("%s-%s", firstQuestionNo, lastNo);
+                
+                if ("44-46".contentEquals(mainQuestionKey)) {
+                    log.debug("");
+                }
                 currentFeedback = extractTranscript(mainQuestionKey);
                 
                 if (currentFeedback != null) {
@@ -131,59 +135,10 @@ public class ToeicTranscriptData extends ToeicData {
     }
 
     private String extractTranscript(String groupQuestionNo) {
-        
-        
-//        String transcript = substring(groupQuestionNo, ".\n\n\n");
         String transcript = extractDialog(groupQuestionNo);
-        
-        // Detect to remove some special characters
-//        transcript = transcript.replace('|', 'I');
-//        String regex = "[MW]-";
-//        Pattern pattern = Pattern.compile(regex);
-//        Matcher matcher = pattern.matcher(transcript);
-        
-//        if (matcher.find()) {
-////            transcript = AppUtility.extractDialog(text, matcher.start());
-//        }
-//        
+
+        transcript = posprocess(transcript);
         return transcript;
-    }
-
-    private void extractCorrectedAnswer(int startIdxQ, int endIdxQ) {
-        
-        String answerKeyTable = substring("1(", "\n(A) ");
-        
-        answerKeyTable = answerKeyTable.trim();
-        
-        String remainText = answerKeyTable;
-        int endPos = 0;
-        int questionNo;
-        while (remainText.length() > 0) {
-            String regular = "(\\d{1,3})\\s*\\(([ABCD])\\)";
-            Pattern pattern = Pattern.compile(regular);
-            Matcher matcher = pattern.matcher(remainText);
-            
-            if (matcher.find()) {
-                String strQuestionNo = matcher.group(1);
-                questionNo = Integer.parseInt(strQuestionNo);
-                String key = matcher.group(2);
-                
-                QuestionData qd = mapQuestion.get(questionNo);
-                if (qd == null) {
-                    qd = new QuestionData();
-                }
-                qd.setCorrectAnswer("" + key.charAt(0));
-                // Update map
-                mapQuestion.put(questionNo, qd);
-                
-                endPos = matcher.end();
-                remainText = remainText.substring(endPos);
-            } else {
-
-                log.error("Could not extract answer key from position " + endPos + ": " + remainText);
-                break;
-            }
-        }
     }
 
 }

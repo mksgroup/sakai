@@ -24,7 +24,7 @@ public class ToeicParser {
         String rcTxtFilePath = FileUtil.buildPath(folderPath, folderName + "_RC.txt");
         
         // Answer key of reading
-        String rcKeyTxtFilePath = FileUtil.buildPath(folderPath, folderName + "_RC_Key.txt");
+        String rcKeyTxtFilePath = FileUtil.buildPath(folderPath, folderName + "_RC_AnswserKey.txt");
         
         String outExcelPath = FileUtil.buildPath(folderPath, folderName + ".xlsx");
         
@@ -32,6 +32,7 @@ public class ToeicParser {
             String lcTxt = FileUtil.getContent(new File(lcTxtFilePath), "utf-8");
             String lcTranscriptTxt = FileUtil.getContent(new File(lcTranscriptTxtFilePath), "utf-8");
             String rcTxt = FileUtil.getContent(new File(rcTxtFilePath), "utf-8");
+            String rcKeyTxt = FileUtil.getContent(new File(rcKeyTxtFilePath), "utf-8");
             ToeicData lcTd = new ToeicData(lcTxt);
             
             Workbook wb = AppUtility.write(null, null, lcTd);
@@ -45,7 +46,13 @@ public class ToeicParser {
 
             // Write Corrected Answer for Listening
             ToeicTranscriptData transcriptData = new ToeicTranscriptData(lcTd, lcTranscriptTxt, wb);
-            wb = AppUtility.writeAnswerKeys(wb, transcriptData);
+
+            // Parse AnswerKey Table for reading
+            AnswerKeyParser akParser = new AnswerKeyParser(transcriptData, rcKeyTxt);
+            
+            wb = AppUtility.writeAnswerKeys(wb, akParser);
+            
+
             
             wb = AppUtility.write(wb, null, transcriptData);
             

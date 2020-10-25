@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import lombok.extern.slf4j.Slf4j;
 import m.k.s.sakai.app.question.logic.QuestionData;
@@ -41,7 +44,7 @@ public class ToeicData {
      */
     // final static String PATTERN_NUMBERS2 = ".*(\\d\\d\\.\r\n[\\d|\\.|\r|\n]*\\d\\d\\.\r\n).*";
     final static String PATTERN_NUMBERS2 = ".*(\\d\\d\\.\n[\\d\\.,\n\\s]*\\d\\d\\.\n).*";
-    final static String PATTERN_NUMBERS3 = ".*(\\d\\d\\d\\.\n[\\d\\d\\.,\n\\s]*\\d\\d\\d\\.\n).*";
+    final static String PATTERN_NUMBERS3 = ".*(\\d\\d\\d[\\.,]\n[\\d\\d\\.,\n\\s]*\\d\\d\\d[\\.,]\n).*";
     
     /** Detect question 100. in part 4. . */
     final static String PATTERN_NUMBERS_100 = "(\\d\\d\\d\\.\n).*";
@@ -55,8 +58,7 @@ public class ToeicData {
 	public ToeicData(String text) {
 		this.text = text;
 		
-		// Pre-processing: replace \n \n by \n\n
-		this.text = this.text.replace("\n \n", "\n\n");
+		preprocess();
         
 		// Step 1: Parse introductions from Part 1 to Part 3.
 		extractIntros(POS_MARKS);
@@ -69,6 +71,12 @@ public class ToeicData {
 		
 		extractQuestionPart345(71, 100);
 	}
+
+    void preprocess() {
+        // Pre-processing: replace \n \n by \n\n
+		this.text = this.text.replace("\n \n", "\n\n");
+		this.text = this.text.replace("\r", "");
+    }
 	
     /**
      * Parse content of text to extract introduction content of Part 1, Part 2, and Part 3.
@@ -94,7 +102,7 @@ public class ToeicData {
         int nextCurPos;
         while (i <= endIdxQ) {
   
-            if (i == 126) {
+            if (i >=  109) {
                 log.debug("");
             }
             qd = extractNextQuestions(i);
@@ -117,7 +125,14 @@ public class ToeicData {
                     nextCurPos = text.indexOf(lastQuestionNoOfGroup + ".", curPos);
                     
                     if (nextCurPos == -1) {
-                        log.error("Could not extract question " + lstQuestionNo + " at position " + curPos);
+                        // try to address the last significant by patter nnn,
+                        nextCurPos = text.indexOf(lastQuestionNoOfGroup + ",", curPos);
+                    }
+                    
+                    if (nextCurPos == -1) {
+                        String msg = "Could not extract question " + lstQuestionNo + ";question no=" + i + " at position " + curPos;
+                        log.error(msg);
+                        throw new RuntimeException(msg);
                     } else {
                         curPos = nextCurPos;
                         extractGroupOfQuestionContents(lstQuestionNo);
@@ -205,7 +220,7 @@ public class ToeicData {
         if (questionNo == 109) {
             log.debug("Question=" + questionNo);
         }
-        if (question != null && isValid(question)) {
+        if (question != null && isValid(question, questionNo)) {
             qd = new QuestionData();
             qd.setQuestion(question);
             
@@ -233,13 +248,13 @@ public class ToeicData {
     
         final String endText = "(A) ";
 
-        if (questionNo == 126) {
+        if (questionNo > 100) {
             log.debug("");
         }
         String question = substring(startText, endText);
         
 
-        if (question != null && isValid(question)) {
+        if (question != null && isValid(question, questionNo)) {
             QuestionData qd;
             List<String> answers;
             
@@ -297,11 +312,15 @@ public class ToeicData {
      * 
      * dd.
      * 
-     * @param question
+     * @param content of question
+     * @param questionNo order number of question
      * @return
      */
-    private boolean isValid(String question) {
-        String pattern = PATTERN_NUMBERS2;
+    private boolean isValid(String question, int questionNo) {
+        if (questionNo == 109) {
+            log.debug("");
+        }
+        String pattern = questionNo < 100 ? PATTERN_NUMBERS2: PATTERN_NUMBERS3;
         String value = CommonUtil.parsePattern(question, pattern);
         
         return value == null;
@@ -319,7 +338,62 @@ public class ToeicData {
         String content = substring("PART 4", "\nL");
         mapIntro.put("PART4_INTRO", content);
     }
-    
+
+    void extractCorrectedAnswer(int startIdxQ, int endIdxQ) {
+        
+        String answerKeyTable;
+        
+        // Try to address start of answer key table
+        int startPosAnswerKeyTable = text.indexOf(startIdxQ + " (");
+        if (-1 < startPosAnswerKeyTable && startPosAnswerKeyTable < 100) {
+            answerKeyTable = substring(startIdxQ + " (", "\n(A) ");
+        } else if (endIdxQ == 100) {
+            answerKeyTable = substring(startIdxQ + "(", "\n(A) ");
+        } else {
+            // For Reading
+            answerKeyTable = text;
+        }
+        
+        if (answerKeyTable == null) {
+            throw new RuntimeException(String.format("Could to extract answerkey table from question from %d to %d", startIdxQ, endIdxQ));
+        }
+        
+        if (startIdxQ > 100 ) {
+            log.debug("");
+        }
+        answerKeyTable = answerKeyTable.trim();
+        
+        String remainText = answerKeyTable;
+        int endPos = 0;
+        int questionNo;
+        while (remainText.length() > 0) {
+            String regular = "(\\d{1,3})\\s*\\(([ABCD])\\)";
+            Pattern pattern = Pattern.compile(regular);
+            Matcher matcher = pattern.matcher(remainText);
+            
+            if (matcher.find()) {
+                String strQuestionNo = matcher.group(1);
+                questionNo = Integer.parseInt(strQuestionNo);
+                String key = matcher.group(2);
+                
+                QuestionData qd = mapQuestion.get(questionNo);
+                if (qd == null) {
+                    qd = new QuestionData();
+                }
+                qd.setCorrectAnswer("" + key.charAt(0));
+                // Update map
+                mapQuestion.put(questionNo, qd);
+                
+                endPos = matcher.end();
+                remainText = remainText.substring(endPos);
+            } else {
+
+                log.error("Could not extract answer key from position " + endPos + ": " + remainText);
+                break;
+            }
+        }
+    }
+
 	/**
 	 * Extract a substring with start text and end text.
 	 * @param startText
@@ -352,7 +426,18 @@ public class ToeicData {
     	// Update position
     	curPos = posEnd;
 
+    	subText = posprocess(subText);
+    	
     	return subText;
+    }
+
+    String posprocess(String st) {
+        // Post-preprocessing;
+        st = st.replace(" | ", " I ");
+    	st = st.replace("| ", "I ");
+    	st = st.replace(" |", " I");
+
+        return st;
     }
 
     String extractDialog(String groupQuestionNo) {
@@ -378,18 +463,24 @@ public class ToeicData {
                     continue;
                 }
                 // Valid line contains one of the token: M-, W-, (\\d, \n, English word.
-                String[] words = line.split(" ");
-                if (words != null && words.length > 0) {
-                    if (isValidTokenDialog(words[0])) {
-                        // Go next
-                        sb.append(line).append("\n");
-                    } else {
-                        // Stop
-                        validLine = false;
-                    }
+                if (isEnglish(line)) {
+                    // Go next
+                    sb.append(line).append("\n");
                 } else {
-                    log.warn("Invalid line: " + line);
+                    validLine = false;
                 }
+//                String[] words = line.split(" ");
+//                if (words != null && words.length > 0) {
+//                    if (isValidTokenDialog(words[0])) {
+//                        // Go next
+//                        sb.append(line).append("\n");
+//                    } else {
+//                        // Stop
+//                        validLine = false;
+//                    }
+//                } else {
+//                    log.warn("Invalid line: " + line);
+//                }
             } while (validLine);
         } else {
             log.warn("Could to detect line of group question: " + groupQuestionNo);
@@ -399,8 +490,56 @@ public class ToeicData {
 
         return sb.toString();
     }
+
+    private boolean isNoEnglish(String line) {
+        StringTokenizer stzer = new StringTokenizer(line, " \\t\\n\\r\\f.-!");
+        
+        String token;
+        int ncount=0;
+        while (stzer.hasMoreTokens()) {
+            token = stzer.nextToken();
+            if (!isValidTokenDialog(token)) {
+                ncount++;
+            }
+            if (!isValidTokenDialog(token) && ncount > 1) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    private boolean isEnglish(String line) {
+        StringTokenizer stzer = new StringTokenizer(line);
+        int nEnglish = 0;
+        int nNoEnglish = 0;
+        int nTotal = stzer.countTokens();
+        int index = 0;
+        while (stzer.hasMoreTokens()) {
+            String token = stzer.nextToken();
+            if (!isValidTokenDialog(token)) {
+                nNoEnglish++;
+            } else {
+                nEnglish++;
+            }
+            
+//            if (nNoEnglish * 2 > nTotal) {
+//                return false;
+//            }
+            if (index > 2 && nNoEnglish > 1) {
+                return false;
+            }
+            
+            if (nEnglish * 2 > nTotal) {
+                return true;
+            }
+            index++;
+        }
+        
+        return false;
+    }
+
     private boolean isValidTokenDialog(String word) {
-        final String[] PREFIX = {"M-", "W-", "(", "\n"};
+        final String[] PREFIX = {"M-", "W-", "(", "\n", "|"};
         
         for (String prefix : PREFIX) {
             if (word.startsWith(prefix)) {
@@ -408,6 +547,13 @@ public class ToeicData {
             }
         }
         
+        // Check is numberic
+        try {
+            Double.parseDouble(word);
+            return true;
+        } catch (Exception ex) {
+            // Do nothing
+        }
         // Check English dictionary.
         
         return AppUtility.checkEnglishWord(word);

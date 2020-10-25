@@ -21,10 +21,12 @@ package mksgroup.english.common;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -40,8 +42,6 @@ import org.xml.sax.SAXException;
 
 import lombok.extern.slf4j.Slf4j;
 import m.k.s.sakai.app.question.logic.QuestionData;
-import mksgroup.english.common.AppUtility;
-import mksgroup.java.common.CommonUtil;
 import mksgroup.java.common.FileUtil;
 import mksgroup.java.poi.PoiUtil;
 
@@ -59,10 +59,12 @@ public class AppUtility {
     private static final Logger LOG = Logger.getLogger(AppUtility.class);
 
 
-    public static String ENGLISH_WORDS;
+    public static SortedSet<String> ENGLISH_WORDS;
+
     static {
         try {
-            ENGLISH_WORDS = FileUtil.getContent("/words.txt", "utf-8");
+            ENGLISH_WORDS = FileUtil.getSortedContentByLines("/english.txt", "utf-8");
+
         } catch (IOException e) {
             log.error("Could not read English work file words.txt", e);
         }
@@ -256,7 +258,7 @@ public class AppUtility {
     }
     
     public static Workbook writeAnswerKeys(Workbook wb, ToeicData transcriptData) {
-        final String[] PARTS = {"Part1", "Part2", "Part3", "Part4"};
+        final String[] PARTS = {"Part1", "Part2", "Part3", "Part4", "Part5", "Part6", "Part7"};
         Sheet sheet;
         // Scan question no
         int lastRowIdx;
@@ -348,6 +350,12 @@ public class AppUtility {
 
         return result;
     }
+    
+    /**
+     * Remove number and dot character before a string.
+     * @param question content of question
+     * @return question without prefix number and dot character
+     */
     public static String removePrefixNo(String question) {
         Pattern p = Pattern.compile("(\\d{2,3}\\.\\s)");
         return p.matcher(question).replaceAll("");
@@ -356,16 +364,16 @@ public class AppUtility {
     public static boolean checkEnglishWord(String word) {
         boolean valid;
 
-        if (word.startsWith("OK?")) {
+        if (word.startsWith("OO")) {
             log.debug("");
         }
-        // Void special charaters: ' ? 
-        String[] subwords = word.split("[’'\\?\\.;,\\(\\)]");
+        // Void special characters: ' ? 
+        String[] subwords = word.split("[’'\\?\\.;,\\(\\)!-]");
         
         if (subwords != null && subwords.length > 0) {
-            valid = ENGLISH_WORDS.contains(subwords[0].toLowerCase() + '\n');
+            valid = ENGLISH_WORDS.contains(subwords[0].toLowerCase());
         } else {
-            valid = ENGLISH_WORDS.contains(word.toLowerCase()  + '\n');
+            valid = ENGLISH_WORDS.contains(word.toLowerCase());
         }
 
         return valid;

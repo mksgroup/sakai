@@ -28,8 +28,7 @@ public class ToeicDataPart567 extends ToeicData {
 	public ToeicDataPart567(String text) {
 		this.text = text;
 		
-		// Pre-processing: replace \n \n by \n\n
-		this.text = this.text.replace("\n \n", "\n\n");
+		preprocess();
 		
 		// Step 1: Parse introduction.
 		extractIntros(POS_MARKS);
@@ -67,7 +66,7 @@ public class ToeicDataPart567 extends ToeicData {
         int endQuestionNo;
         while (i <= endIdxQ) {
   
-            if (i == 176) {
+            if (i == 109) {
                 log.debug("");
             }
             i = extractGroupQuestion(i);
@@ -81,7 +80,7 @@ public class ToeicDataPart567 extends ToeicData {
 
         String groupQuestion = substring("Questions 1", "\n\n1");
         
-        if (questionNo == 176) {
+        if (questionNo == 126) {
             log.debug("");
         }
         // Part question indices of sub questions. Ex: Questions 131-134

@@ -12,6 +12,31 @@ import mksgroup.java.common.CommonUtil;
 public class TestPattern {
 
     @Test
+    public void testPattern0() {
+        String text = "109.\n" + 
+                "\n" + 
+                "110.\n" + 
+                "\n" + 
+                "111.\n" + 
+                "\n" + 
+                "112.\n" + 
+                "\n" + 
+                "113.\n" + 
+                "\n" + 
+                "114,\n" + 
+                "\n" + 
+                "Beginning on August 1, patients will be\n" + 
+                "asked to complete a short survey -------\n" + 
+                "each visit.";
+        String pattern = ToeicData.PATTERN_NUMBERS3; // ".*(\\d\\d\\d[\\.,]\n[\\d\\d\\.,\n\\s]*\\d\\d\\d[\\.,]\n).*";
+        String value = CommonUtil.parsePattern(text, pattern);
+        
+        System.out.println(value);
+        
+//        assertTrue(isValid(text));
+    }
+    
+    @Test
     public void testPattern1() {
         String text = "(C) To correct an error on a map\r\n" + 
                 "\r\n" + 
@@ -121,6 +146,40 @@ public class TestPattern {
 //        assertNotNull(value);
 //    }
 
+    @Test
+    public void testPattern12() {
+        String text = "O11 purse 7|Z} suitcase 0184712\r\n" + 
+                "\r\n" + 
+                "He 12! SS APE — ABO] SAt/AEH BAT\r\n" + 
+                "12 W";
+        String regular = "12[\\s\r\n]++[WwMm\n]+";
+        
+        Pattern pattern = Pattern.compile(regular);
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            assertTrue("Found pattern at"  + matcher.start(), true);
+            System.out.println("Found pattern at:" + text.substring(matcher.start(), matcher.end()));
+
+        } else {
+            fail();
+        }
+    }
+
+    @Test
+    public void testPattern13() {
+        String text = "abc12 W !XY";
+        String regular = "12\\s[Wx\\n]+";
+        
+        Pattern pattern = Pattern.compile(regular);
+        Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            assertTrue("Found pattern at"  + matcher.start(), true);
+            System.out.println("Found pattern at:" + text.substring(matcher.start(), matcher.end()));
+
+        } else {
+            fail();
+        }
+    }
     public static String parsePattern(String text, String regular) {
         Pattern pattern = Pattern.compile(regular);
         Matcher matcher = pattern.matcher(text);
