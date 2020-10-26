@@ -34,8 +34,9 @@ public class ToeicParser {
             String rcTxt = FileUtil.getContent(new File(rcTxtFilePath), "utf-8");
             String rcKeyTxt = FileUtil.getContent(new File(rcKeyTxtFilePath), "utf-8");
             ToeicData lcTd = new ToeicData(lcTxt);
-            
-            Workbook wb = AppUtility.write(null, null, lcTd);
+            String excelTemplatePath = FileUtil.buildPath(folderPath, "Template_TOEIC_" + folderName + ".xlsx");
+
+            Workbook wb = AppUtility.write(null, excelTemplatePath, lcTd);
             
             ToeicData rcTd = new ToeicDataPart567(rcTxt);
             // Write Part 5
