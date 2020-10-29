@@ -20,6 +20,7 @@ public class PToeic {
      */
     public static void main(String[] args) {
         String folderPath = args[0];
+        
 
         ToeicParser parser = new ToeicParser(folderPath);
     }

@@ -16,6 +16,7 @@ import mksgroup.java.poi.PoiUtil;
 
 public class PToeicTest {
 
+    private static final int IDX_COL_QUESTION = 1;
     private static final int IDX_COL_ANSWER = 6;
     private static final int IDX_COL_FEEDBACK_A = 12;
     private static final int IDX_COL_FEEDBACK_B = 13;
@@ -24,7 +25,7 @@ public class PToeicTest {
 
     @Test
     public void testMain() {
-        String folderPath = "D:\\Temp\\TOEIC3\\ETS_2020_N3";
+        String folderPath = "D:\\Temp\\TOEIC\\ETS_2020_N7";
 
         PToeic.main(new String[] {folderPath});
         
@@ -35,12 +36,13 @@ public class PToeicTest {
             Workbook wb = PoiUtil.loadWorkbook(new FileInputStream(outputExcelPath));
             Sheet sheet;
             Row row;
-            final String[] PARTS = {"Part1", "Part2", "Part3", "Part4"};
+            final String[] PARTS = {"Part1", "Part2", "Part3", "Part4", "Part5", "Part6", "Part7"};
             int firstRowIdx;
             int lastRowIdx;
             Object cellVal;
             String answerkey;
             int questionNo;
+            String question;
             for (String part: PARTS) {
                 sheet = wb.getSheet(part);
                 firstRowIdx = sheet.getFirstRowNum();
@@ -52,6 +54,11 @@ public class PToeicTest {
                     
                     if (cellVal instanceof Double) {
                         questionNo = ((Double) cellVal).intValue();
+                        
+                        // Check question content is not null
+                        question = (String) PoiUtil.getValue(row, IDX_COL_QUESTION);
+                        assertNotNull(question);
+                        assertNotEquals("", question);
                         
                         // Check answer key
                         answerkey = (String) PoiUtil.getValue(row, IDX_COL_ANSWER);

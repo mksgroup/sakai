@@ -73,9 +73,12 @@ public class ToeicData {
 	}
 
     void preprocess() {
+
         // Pre-processing: replace \n \n by \n\n
 		this.text = this.text.replace("\n \n", "\n\n");
 		this.text = this.text.replace("\r", "");
+		this.text = this.text.replace("w-Am", "W-Am");
+
     }
 	
     /**
@@ -102,7 +105,7 @@ public class ToeicData {
         int nextCurPos;
         while (i <= endIdxQ) {
   
-            if (i >=  109) {
+            if (i >=  71) {
                 log.debug("");
             }
             qd = extractNextQuestions(i);
@@ -335,7 +338,7 @@ public class ToeicData {
     }
 
     private void extractIntroPart4() {
-        String content = substring("PART 4", "\nL");
+        String content = substring("PART 4", ".\n\n");
         mapIntro.put("PART4_INTRO", content);
     }
 
