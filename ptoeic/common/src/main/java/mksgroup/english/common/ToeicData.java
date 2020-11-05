@@ -15,7 +15,9 @@ import mksgroup.java.common.CommonUtil;
 @Slf4j
 public class ToeicData {
     
-	String text;
+	public static final String WORD_SEPARATOR = " \t\n\r\f,.!?-—";
+
+    String text;
 	
 	int preCurPos = 0;
 	/** Current position of processing. */
@@ -105,7 +107,7 @@ public class ToeicData {
         int nextCurPos;
         while (i <= endIdxQ) {
   
-            if (i >=  71) {
+            if (i ==  62) {
                 log.debug("");
             }
             qd = extractNextQuestions(i);
@@ -459,6 +461,9 @@ public class ToeicData {
                 idxNextEndline = text.indexOf('\n', idxStart);
                 line = text.substring(idxStart, idxNextEndline);
 
+                if (groupQuestionNo.contentEquals("62-64")) {
+                    log.debug("");
+                }
                 if (line != null && (line.length() == 0 || line.charAt(0) == '\n') || " ".contentEquals(line)) {
                     if ("\n".contentEquals(line)) {
                         sb.append(line);
@@ -495,7 +500,7 @@ public class ToeicData {
     }
 
     private boolean isNoEnglish(String line) {
-        StringTokenizer stzer = new StringTokenizer(line, " \\t\\n\\r\\f.-!");
+        StringTokenizer stzer = new StringTokenizer(line, WORD_SEPARATOR);
         
         String token;
         int ncount=0;
@@ -512,7 +517,7 @@ public class ToeicData {
         return false;
     }
     private boolean isEnglish(String line) {
-        StringTokenizer stzer = new StringTokenizer(line);
+        StringTokenizer stzer = new StringTokenizer(line, WORD_SEPARATOR);
         int nEnglish = 0;
         int nNoEnglish = 0;
         int nTotal = stzer.countTokens();

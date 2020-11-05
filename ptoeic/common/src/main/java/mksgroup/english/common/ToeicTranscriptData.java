@@ -117,6 +117,9 @@ public class ToeicTranscriptData extends ToeicData {
             } else if (questionNoObj instanceof Double) {
                 questionNo = ((Double) questionNoObj).intValue();
 
+                if (questionNo == 62) {
+                    log.debug("");
+                }
                 questionData = mapQuestion.get(questionNo);
                 if (questionData != null) {
                     // Make sure the feedback of exact question

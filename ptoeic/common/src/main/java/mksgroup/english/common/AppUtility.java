@@ -21,10 +21,8 @@ package mksgroup.english.common;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.regex.Pattern;
@@ -244,7 +242,11 @@ public class AppUtility {
                     questionData = toeicData.mapQPart6.get(mainQuestionKey);
                     
                     // Write to Excel
-                    PoiUtil.setContent(row, 1, questionData.getQuestion());
+                    if (questionData != null) {
+                        PoiUtil.setContent(row, 1, questionData.getQuestion());
+                    } else {
+                        log.error("Question not found at idxRow=" + idxRow + " of Part 6");
+                    }
                 } else if (questionNoObj != null) {
                     LOG.warn("Unknown data type:" + questionNoObj.getClass());
                 } else {
@@ -368,7 +370,7 @@ public class AppUtility {
             log.debug("");
         }
         // Void special characters: ' ? 
-        String[] subwords = word.split("[’'\\?\\.;,\\(\\)!-]");
+        String[] subwords = word.split("[’'\\?\\.;,\\(\\)!-—]");
         
         if (subwords != null && subwords.length > 0) {
             valid = ENGLISH_WORDS.contains(subwords[0].toLowerCase());
