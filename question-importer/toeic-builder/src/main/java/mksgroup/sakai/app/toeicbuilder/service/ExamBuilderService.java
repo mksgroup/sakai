@@ -186,11 +186,12 @@ public class ExamBuilderService {
             Path filePath = listExcelFiles.get(0);
             
             Workbook wb = PoiUtil.loadWorkbook(new FileInputStream(filePath.toFile()));
+            wb = processContentFileExcel(wb);
+
             String fileName = filePath.getFileName().toString();
 
-            wb = processContentFileExcel(wb);
-            
-            String outputFileExcelPath = outFolder + fileName;
+            String mainFilename = FileUtil.getFilenameNoExtension(fileName);
+            String outputFileExcelPath = outFolder + mainFilename + "_processed.xlsx";
             PoiUtil.writeExcelFile(wb, outputFileExcelPath);
             
             return outputFileExcelPath;
